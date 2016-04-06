@@ -6,7 +6,6 @@
 #include <boost/operators.hpp>
 #include "./connection.hpp"
 #include "./utility/pimpl_handle.hpp"
-#include "./utility/strong_typedef.hpp"
 
 namespace gdbplz
 {
@@ -24,23 +23,6 @@ namespace gdbplz
 		gdb_version(unsigned major, unsigned minor, unsigned patch, std::string others);
 	};
 	
-	struct remote_params
-	{
-		
-	};
-	
-	struct local_params
-	{
-		boost::filesystem::path debugged_executable;
-		boost::filesystem::path symbol_file = debugged_executable;
-		std::vector<boost::string_ref> arguments = std::vector<boost::string_ref>();
-	};
-	
-	struct process_id : wiertlo::strong_typedef<int, process_id>
-	{
-		using wiertlo::strong_typedef<int, process_id>::strong_typedef;
-	};
-	
 	class session
 	{
 	private:
@@ -48,9 +30,7 @@ namespace gdbplz
 		typedef wiertlo::pimpl_handle<impl> pimpl_handle_type;
 		pimpl_handle_type pi;
 	public:
-		session(gdbplz::connection conn, remote_params params);
-		session(gdbplz::connection conn, local_params params);
-		session(gdbplz::connection conn, process_id pid);
+		session(gdbplz::connection conn);
 		
 		void start();
 		void continue_program();

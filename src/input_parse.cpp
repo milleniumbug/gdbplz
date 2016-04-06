@@ -1,5 +1,6 @@
 #include <type_traits>
 #include <stdexcept>
+#include "../include/gdbplz/utility/string.hpp"
 #include "../include/gdbplz/input_parse.hpp"
 
 namespace gdbplz
@@ -9,26 +10,11 @@ namespace gdbplz
 		using std::invalid_argument::invalid_argument;
 	};
 	
-	boost::string_ref slice(
-		boost::string_ref in,
-		std::make_signed<boost::string_ref::size_type>::type b,
-		std::make_signed<boost::string_ref::size_type>::type e = -1)
-	{
-		auto to_index = [&](std::make_signed<boost::string_ref::size_type>::type i){ return i >= 0 ? i : in.size()+i; };
-		b = to_index(b);
-		e = to_index(e);
-		return in.substr(b, e-b);
-	}
-	
-	boost::string_ref trim(boost::string_ref in, boost::string_ref whitespace = " \r\n\t")
-	{
-		auto b = in.find_first_not_of(whitespace);
-		auto e = in.find_last_not_of(whitespace);
-		return slice(in, b, e+1);
-	}
-	
 	std::string string_from_c_string_literal(boost::string_ref literal)
 	{
+		using wiertlo::trim;
+		using wiertlo::slice;
+		
 		std::string result;
 		literal = trim(literal);
 		if(!literal.starts_with('\"') || !literal.ends_with('\"'))
