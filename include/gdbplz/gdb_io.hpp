@@ -3,6 +3,7 @@
 
 #include <boost/utility/string_ref.hpp>
 #include <boost/variant.hpp>
+#include <boost/optional.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -19,19 +20,33 @@ namespace gdbplz
 	
 	typedef std::pair<std::string, value> result;
 	
+	class invalid_token : std::invalid_argument
+	{
+	public:
+		std::string passed_token;
+		
+		invalid_token(std::string passed_token);
+	};
+	
+	struct token_verify
+	{
+		void operator()(const std::string& tok);
+	};
+	WIERTLO_STRONG_TYPEDEF_WITH_PRECONDITION(user_token, token_verify, std::string);
+	
 	enum class result_class { done, connected, error, exit };
 	enum class async_class { stopped, running };
 	
 	struct result_record
 	{
-		std::string token;
+		user_token token;
 		result_class state;
 		std::vector<result> results;
 	};
 	
 	struct async_output
 	{
-		std::string token;
+		user_token token;
 		std::vector<result> results;
 	};
 	
@@ -61,6 +76,27 @@ namespace gdbplz
 		stream_record
 	> output;
 	
+	class option
+	{
+		std::string name;
+		boost::optional<std::string> value;
+	};
+	
+	class mi_command
+	{
+		std::string operation;
+		std::vector<option> options;
+		std::vector<std::string> parameters;
+	};
+	
+	class cli_command
+	{
+		user_token token;
+		std::string command;
+	};
+	
+	std::string c_string_literal_from_string(boost::string_ref literal);
+	std::string string_from_c_string_literal(boost::string_ref literal);
 	output parse_next(boost::string_ref gdb_output);
 }
 

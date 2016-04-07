@@ -1,26 +1,31 @@
 #ifndef WIERTLO_STRING_HPP_BE11054B57F4424B9B2CDA913290906C
 #define WIERTLO_STRING_HPP_BE11054B57F4424B9B2CDA913290906C
 
-#include <boost/numeric/conversion/cast.hpp>
 #include <boost/utility/string_ref.hpp>
 #include <type_traits>
 
 namespace wiertlo
 {
+	
 	namespace detail
 	{
-		boost::string_ref::size_type to_index(
-			boost::string_ref in,
-			std::make_signed<boost::string_ref::size_type>::type i)
+		// TODO: extend for more types
+		typedef boost::string_ref StringRef;
+		
+		inline
+		StringRef::size_type to_index(
+			StringRef in,
+			std::make_signed<StringRef::size_type>::type i)
 		{
 			return i >= 0 ?
 				i :
-				in.size() - static_cast<boost::string_ref::size_type>(-i);
+				in.size() - static_cast<StringRef::size_type>(-i);
 		}
 		
-		boost::string_ref::size_type to_index(
-			boost::string_ref in,
-			boost::string_ref::size_type i)
+		inline
+		StringRef::size_type to_index(
+			StringRef in,
+			StringRef::size_type i)
 		{
 			static_cast<void>(in);
 			return i;
@@ -31,13 +36,13 @@ namespace wiertlo
 			typename std::enable_if<(
 				std::is_integral<T>::value &&
 				std::is_signed<T>::value &&
-				!std::is_same<T, std::make_signed<boost::string_ref::size_type>::type>::value
+				!std::is_same<T, std::make_signed<StringRef::size_type>::type>::value
 			)>::type* = nullptr>
-		boost::string_ref::size_type to_index(
-			boost::string_ref in,
+		StringRef::size_type to_index(
+			StringRef in,
 			T i)
 		{
-			return to_index(in, std::make_signed<boost::string_ref::size_type>::type(i));
+			return to_index(in, std::make_signed<StringRef::size_type>::type(i));
 		}
 		
 		template<
@@ -45,36 +50,36 @@ namespace wiertlo
 			typename std::enable_if<(
 				std::is_integral<T>::value &&
 				std::is_unsigned<T>::value &&
-				!std::is_same<T, boost::string_ref::size_type>::value
+				!std::is_same<T, StringRef::size_type>::value
 			)>::type* = nullptr>
-		boost::string_ref::size_type to_index(
-			boost::string_ref in,
+		StringRef::size_type to_index(
+			StringRef in,
 			T i)
 		{
-			return to_index(in, boost::string_ref::size_type(i));
+			return to_index(in, StringRef::size_type(i));
 		}
 		
 		inline
-		boost::string_ref slice_impl(
-			boost::string_ref in,
-			boost::string_ref::size_type b,
-			boost::string_ref::size_type e)
+		StringRef slice_impl(
+			StringRef in,
+			StringRef::size_type b,
+			StringRef::size_type e)
 		{
 			return b < in.size() ? in.substr(b, e-b) : in.substr(0,0);
 		}
 	}
 	
 	template<typename T>
-	boost::string_ref slice(
-		boost::string_ref in,
+	detail::StringRef slice(
+		detail::StringRef in,
 		T b)
 	{
 		return detail::slice_impl(in, detail::to_index(in, b), detail::to_index(in, in.size()));
 	}
 	
 	template<typename T>
-	boost::string_ref slice(
-		boost::string_ref in,
+	detail::StringRef slice(
+		detail::StringRef in,
 		T b,
 		T e)
 	{
@@ -82,7 +87,7 @@ namespace wiertlo
 	}
 	
 	inline
-	boost::string_ref trim(boost::string_ref in, boost::string_ref whitespace = " \r\n\t")
+	detail::StringRef trim(detail::StringRef in, detail::StringRef whitespace = " \r\n\t")
 	{
 		auto b = in.find_first_not_of(whitespace);
 		auto e = in.find_last_not_of(whitespace);

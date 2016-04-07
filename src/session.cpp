@@ -4,7 +4,7 @@ namespace gdbplz
 {
 	struct session::impl : wiertlo::pimpl_implementation_mixin<session::pimpl_handle_type, session::impl>
 	{
-		static impl_type& get_impl(pimpl_handle_type& handle) { return *get_handle(handle); }
+		unsigned token_counter;
 	};
 	
 	gdb_version session::version() const

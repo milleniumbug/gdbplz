@@ -40,7 +40,16 @@ namespace wiertlo
 		{};
 	}
 	
-	template<typename T, typename Tag>
+	template<typename T>
+	struct null_precondition
+	{
+		void operator()(const T&)
+		{
+			
+		}
+	};
+	
+	template<typename T, typename Tag, typename Precondition = null_precondition<T>>
 	class strong_typedef
 	{
 	private:
@@ -53,7 +62,7 @@ namespace wiertlo
 		strong_typedef(Args&&... args) :
 			value(std::forward<Args>(args)...)	
 		{
-			
+			Precondition()(value);
 		}
 		
 		T get() const
@@ -69,5 +78,7 @@ namespace wiertlo
 }
 
 #define WIERTLO_STRONG_TYPEDEF(what, ...) struct what : wiertlo::strong_typedef<__VA_ARGS__, what> { using wiertlo::strong_typedef<__VA_ARGS__, what>::strong_typedef; }
+
+#define WIERTLO_STRONG_TYPEDEF_WITH_PRECONDITION(what, precondition_functor, ...) struct what : wiertlo::strong_typedef<__VA_ARGS__, what, precondition_functor> { using wiertlo::strong_typedef<__VA_ARGS__, what, precondition_functor>::strong_typedef; }
 
 #endif
