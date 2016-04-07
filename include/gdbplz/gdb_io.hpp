@@ -4,6 +4,7 @@
 #include <boost/utility/string_ref.hpp>
 #include <boost/variant.hpp>
 #include <boost/optional.hpp>
+#include <iosfwd>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -11,14 +12,24 @@
 
 namespace gdbplz
 {
-	typedef boost::make_recursive_variant<
-		std::string,
-		std::unordered_map<std::string, boost::recursive_variant_>,
-		std::vector<boost::recursive_variant_>,
-		std::vector<std::pair<std::string, boost::recursive_variant_>>
-	>::type value;
+	class empty_container : std::invalid_argument
+	{
+	public:
+		empty_container();
+	};
 	
-	typedef std::pair<std::string, value> result;
+	struct nonempty_verify
+	{
+		template<typename T>
+		void operator()(const T& c)
+		{
+			if(c.empty())
+				throw empty_container();
+		}
+	};
+	
+	template<typename T>
+	struct nonempty : wiertlo::strong_typedef<T, nonempty<T>, nonempty_verify> { using wiertlo::strong_typedef<T, nonempty<T>, nonempty_verify>::strong_typedef; };
 	
 	class invalid_token : std::invalid_argument
 	{
@@ -32,7 +43,19 @@ namespace gdbplz
 	{
 		void operator()(const std::string& tok);
 	};
+	
 	WIERTLO_STRONG_TYPEDEF_WITH_PRECONDITION(user_token, token_verify, std::string);
+	std::ostream& operator<<(std::ostream& os, const user_token& token);
+	
+	
+	typedef boost::make_recursive_variant<
+		std::string,
+		std::unordered_map<std::string, boost::recursive_variant_>,
+		std::vector<boost::recursive_variant_>,
+		std::vector<std::pair<std::string, boost::recursive_variant_>>
+	>::type value;
+	
+	typedef std::pair<std::string, value> result;
 	
 	enum class result_class { done, connected, error, exit };
 	enum class async_class { stopped, running };
@@ -76,24 +99,50 @@ namespace gdbplz
 		stream_record
 	> output;
 	
-	class option
+	struct option
 	{
-		std::string name;
-		boost::optional<std::string> value;
+		nonempty<std::string> name;
+		boost::optional<nonempty<std::string>> value;
+	};
+	std::ostream& operator<<(std::ostream& os, const option& opt);
+	
+	class invalid_operation : std::invalid_argument
+	{
+	public:
+		std::string passed_operation;
+		
+		invalid_operation(std::string passed_operation);
 	};
 	
-	class mi_command
+	struct mi_operation_verify
 	{
-		std::string operation;
+		void operator()(const std::string& tok);
+	};
+	WIERTLO_STRONG_TYPEDEF_WITH_PRECONDITION(mi_operation, mi_operation_verify, std::string);
+	std::ostream& operator<<(std::ostream& os, const mi_operation& command);
+	
+	struct cli_operation_verify
+	{
+		void operator()(const std::string& tok);
+	};
+	WIERTLO_STRONG_TYPEDEF_WITH_PRECONDITION(cli_operation, cli_operation_verify, std::string);
+	std::ostream& operator<<(std::ostream& os, const cli_operation& command);
+	
+	struct mi_command
+	{
+		user_token token;
+		mi_operation operation;
 		std::vector<option> options;
-		std::vector<std::string> parameters;
+		std::vector<nonempty<std::string>> parameters;
 	};
+	std::ostream& operator<<(std::ostream& os, const mi_command& command);
 	
-	class cli_command
+	struct cli_command
 	{
 		user_token token;
 		std::string command;
 	};
+	std::ostream& operator<<(std::ostream& os, const cli_command& command);
 	
 	std::string c_string_literal_from_string(boost::string_ref literal);
 	std::string string_from_c_string_literal(boost::string_ref literal);

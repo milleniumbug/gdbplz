@@ -1,5 +1,7 @@
+#include <iostream>
 #include <type_traits>
 #include <stdexcept>
+#include "../include/gdbplz/utility/ascii.hpp"
 #include "../include/gdbplz/utility/string.hpp"
 #include "../include/gdbplz/gdb_io.hpp"
 
@@ -9,6 +11,86 @@ namespace gdbplz
 	{
 		using std::invalid_argument::invalid_argument;
 	};
+	
+	empty_container::empty_container() :
+		std::invalid_argument("empty container is not a valid value for this type")
+	{
+		
+	}
+	
+	invalid_token::invalid_token(std::string passed_token) :
+		std::invalid_argument("invalid token passed: \"" + passed_token + "\", it contains a non-digit"),
+		passed_token(passed_token)
+	{
+		
+	}
+	
+	invalid_operation::invalid_operation(std::string passed_operation) :
+		std::invalid_argument("\"" + passed_operation + "\" is not a valid operation"),
+		passed_operation(passed_operation)
+	{
+		
+	}
+	
+	void token_verify::operator()(const std::string& tok)
+	{
+		if(!std::all_of(tok.begin(), tok.end(), [](char x){ return x >= '0' && x <= '9'; }))
+		{
+			throw invalid_token(tok);
+		}
+	}
+	
+	output parse_next(boost::string_ref gdb_output)
+	{
+		// TODO: implement
+		static_cast<void>(gdb_output);
+		return output();
+	}
+	
+	void mi_operation_verify::operator()(const std::string& tok)
+	{
+		static_cast<void>(tok);
+	}
+	
+	void cli_operation_verify::operator()(const std::string& tok)
+	{
+		auto trimtok = wiertlo::trim(tok);
+		if(trimtok.empty())
+			throw invalid_operation(tok);
+		if(trimtok.front() == '-')
+			throw invalid_operation(tok);
+	}
+	
+	std::string c_string_literal_from_string(boost::string_ref literal)
+	{
+		std::string result = "\"";
+		static_assert(wiertlo::is_basic_source_character_set_ascii_compatible(), "");
+		auto printable_as_is = [](unsigned char ch)
+		{
+			return
+				ch >= 32 && ch < 127 && // printable
+				ch != '\\' &&
+				ch != '\"' &&
+				ch != '\?';
+		};
+		for(const auto ch : literal)
+		{
+			const auto uch = static_cast<unsigned char>(ch);
+			if(printable_as_is(uch))
+			{
+				result += ch;
+			}
+			else
+			{
+				auto hexchars = "0123456789ABCDEF";
+				result += "\\x";
+				result += hexchars[uch / 16];
+				result += hexchars[uch % 16];
+			}
+		}
+		result += "\"";
+		return result;
+	}
 	
 	std::string string_from_c_string_literal(boost::string_ref literal)
 	{
@@ -73,22 +155,52 @@ namespace gdbplz
 		return result;
 	}
 	
-	invalid_token::invalid_token(std::string passed_token) :
-		std::invalid_argument("invalid token passed: \"" + passed_token + "\", it contains a non-digit")
+	std::ostream& operator<<(std::ostream& os, const user_token& token)
 	{
-		
+		os << token.get();
+		return os;
 	}
 	
-	void token_verify::operator()(const std::string& tok)
+	std::ostream& operator<<(std::ostream& os, const mi_operation& op)
 	{
-		if(!std::all_of(tok.begin(), tok.end(), [](char x){ return x >= '0' && x <= '9'; }))
+		os << op.get();
+		return os;
+	}
+	
+	std::ostream& operator<<(std::ostream& os, const cli_operation& op)
+	{
+		os << op.get();
+		return os;
+	}
+	
+	std::ostream& operator<<(std::ostream& os, const option& opt)
+	{
+		os << '-' << gdbplz::c_string_literal_from_string(opt.name.get());
+		if(opt.value)
 		{
-			throw invalid_token(tok);
+			os << " " << opt.value->get();
 		}
+		return os;
 	}
 	
-	output parse_next(boost::string_ref gdb_output)
+	std::ostream& operator<<(std::ostream& os, const mi_command& command)
 	{
-		
+		os << command.token << "-" << command.operation;
+		for(auto&& opt : command.options)
+		{
+			os << " " << opt;
+		}
+		os << " --";
+		for(auto&& param : command.parameters)
+		{
+			os << " " << param.get();
+		}
+		return os;
+	}
+	
+	std::ostream& operator<<(std::ostream& os, const cli_command& command)
+	{
+		os << command.token << wiertlo::trim(command.command) << "\n";
+		return os;
 	}
 }

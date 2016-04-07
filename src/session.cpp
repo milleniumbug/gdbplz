@@ -1,3 +1,4 @@
+#include "../include/gdbplz/gdb_io.hpp"
 #include "../include/gdbplz/session.hpp"
 
 namespace gdbplz
@@ -5,11 +6,18 @@ namespace gdbplz
 	struct session::impl : wiertlo::pimpl_implementation_mixin<session::pimpl_handle_type, session::impl>
 	{
 		unsigned token_counter;
+		connection connection_;
+		
+		result_record send_mi_command(const mi_command& comm)
+		{
+			// TODO: implement
+			return result_record{ comm.token, result_class::done, std::vector<result>() };
+		};
 	};
 	
 	gdb_version session::version() const
 	{
-		auto& i = impl::get(pi);
+		//auto& i = impl::get(pi);
 		// TODO: implement
 		return gdb_version(0, 0, 0, "");
 	}
