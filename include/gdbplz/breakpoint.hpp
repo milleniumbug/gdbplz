@@ -9,7 +9,7 @@ namespace gdbplz
 	{
 	private:
 		struct impl;
-		typedef wiertlo::pimpl_handle<impl> pimpl_handle_type;
+		typedef wiertlo::pimpl_handle<impl, void*, 16> pimpl_handle_type;
 		pimpl_handle_type pi;
 	public:
 		void set_enabled(bool enable);

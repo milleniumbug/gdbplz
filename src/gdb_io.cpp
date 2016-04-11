@@ -1,8 +1,10 @@
+#include <map>
 #include <iostream>
 #include <type_traits>
 #include <stdexcept>
 #include "../include/gdbplz/utility/ascii.hpp"
 #include "../include/gdbplz/utility/string.hpp"
+#include "../include/gdbplz/utility/compiler_hints.hpp"
 #include "../include/gdbplz/gdb_io.hpp"
 
 namespace gdbplz
@@ -40,11 +42,240 @@ namespace gdbplz
 		}
 	}
 	
-	output parse_next(boost::string_ref gdb_output)
+	std::pair<value, boost::string_ref> parse_tuple_rest(boost::string_ref gdb_output)
 	{
-		// TODO: implement
-		static_cast<void>(gdb_output);
-		return output();
+		if(gdb_output.empty() || gdb_output.front() != '{')
+			throw bad_parse("not a tuple");
+		
+		gdb_output = wiertlo::slice(gdb_output, 1);
+		std::unordered_map<std::string, value> tuple;
+		while(true)
+		{
+			if(gdb_output.empty())
+				throw bad_parse("unexpected end of output");
+			if(gdb_output.front() == ',')
+				gdb_output = wiertlo::slice(gdb_output, 1);
+			if(gdb_output.front() == '}')
+			{
+				gdb_output = wiertlo::slice(gdb_output, 1);
+				break;
+			}
+			auto value_rest_pair = parse_result_rest(gdb_output);
+			tuple.insert(value_rest_pair.first);
+			gdb_output = value_rest_pair.second;
+		}
+		return std::make_pair(tuple, gdb_output);
+	}
+	
+	std::pair<value, boost::string_ref> parse_result_list_rest(boost::string_ref gdb_output)
+	{
+		if(gdb_output.empty() || gdb_output.front() != '[')
+			throw bad_parse("not a list");
+		
+		gdb_output = wiertlo::slice(gdb_output, 1);
+		std::vector<result> list;
+		while(true)
+		{
+			if(gdb_output.empty())
+				throw bad_parse("unexpected end of output");
+			if(gdb_output.front() == ',')
+				gdb_output = wiertlo::slice(gdb_output, 1);
+			if(gdb_output.front() == ']')
+			{
+				gdb_output = wiertlo::slice(gdb_output, 1);
+				break;
+			}
+			auto value_rest_pair = parse_result_rest(gdb_output);
+			list.push_back(value_rest_pair.first);
+			gdb_output = value_rest_pair.second;
+		}
+		return std::make_pair(list, gdb_output);
+	}
+	
+	std::pair<value, boost::string_ref> parse_value_list_rest(boost::string_ref gdb_output)
+	{
+		if(gdb_output.empty() || gdb_output.front() != '[')
+			throw bad_parse("not a list");
+		
+		gdb_output = wiertlo::slice(gdb_output, 1);
+		std::vector<value> list;
+		while(true)
+		{
+			if(gdb_output.empty())
+				throw bad_parse("unexpected end of output");
+			if(gdb_output.front() == ',')
+				gdb_output = wiertlo::slice(gdb_output, 1);
+			if(gdb_output.front() == ']')
+			{
+				gdb_output = wiertlo::slice(gdb_output, 1);
+				break;
+			}
+			auto value_rest_pair = parse_value_rest(gdb_output);
+			list.push_back(value_rest_pair.first);
+			gdb_output = value_rest_pair.second;
+		}
+		return std::make_pair(list, gdb_output);
+	}
+	
+	std::pair<value, boost::string_ref> parse_list_rest(boost::string_ref gdb_output)
+	{
+		try
+		{
+			return parse_value_list_rest(gdb_output);
+		}
+		catch(const bad_parse& ex)
+		{
+			return parse_result_list_rest(gdb_output);
+		}
+	}
+	
+	std::pair<value, boost::string_ref> parse_value_rest(boost::string_ref gdb_output)
+	{
+		if(gdb_output.empty())
+			throw bad_parse("unexpected end of output");
+		auto first = gdb_output.front();
+		if(first == '\"')
+		{
+			return string_from_c_string_literal_rest(gdb_output);
+		}
+		else if(first == '{')
+		{
+			return parse_tuple_rest(gdb_output);
+		}
+		else if(first == '[')
+		{
+			return parse_list_rest(gdb_output);
+		}
+		throw bad_parse("???");
+	}
+	
+	std::pair<result, boost::string_ref> parse_result_rest(boost::string_ref gdb_output)
+	{
+		auto eq_pos = gdb_output.find_first_of('=');
+		if(eq_pos == boost::string_ref::npos)
+			throw bad_parse("invalid result (no '=' character in sight)");
+		
+		auto name = wiertlo::slice(gdb_output, 0, eq_pos);
+		auto value_rest_pair = parse_value_rest(wiertlo::slice(gdb_output, eq_pos+1));
+		value val = value_rest_pair.first;
+		return std::make_pair(result(std::string(name), val), value_rest_pair.second);
+	}
+	
+	std::vector<result> parse_result_sequence(boost::string_ref gdb_output)
+	{
+		if(gdb_output.empty())
+			throw bad_parse("unexpected end of output");
+		
+		std::vector<result> sequence;
+		while(wiertlo::trim_left(gdb_output) != "")
+		{
+			if(gdb_output.front() == ',')
+				gdb_output = wiertlo::slice(gdb_output, 1);
+			auto value_rest_pair = parse_result_rest(gdb_output);
+			sequence.push_back(value_rest_pair.first);
+			gdb_output = value_rest_pair.second;
+		}
+		return sequence;
+	}
+	
+	result_record parse_result_record(user_token token, boost::string_ref gdb_output)
+	{
+		const boost::string_ref::size_type end = gdb_output.find_first_of(',');
+		result_class rc = [](boost::string_ref rescl)
+		{
+			if(rescl == "done")
+				return result_class::done;
+			else if(rescl == "running")
+				return result_class::done;
+			else if(rescl == "connected")
+				return result_class::connected;
+			else if(rescl == "error")
+				return result_class::error;
+			else if(rescl == "exit")
+				return result_class::exit;
+			throw bad_parse("invalid result-class");
+		}(wiertlo::slice(gdb_output, 0, end));
+		gdb_output = wiertlo::slice(gdb_output, end+1);
+		std::vector<result> result_sequence;
+		if(end != boost::string_ref::npos)
+			result_sequence = parse_result_sequence(gdb_output);
+		result_record rec = { token, rc, result_sequence };
+		return rec;
+	}
+	
+	async_output parse_async_record(user_token token, boost::string_ref gdb_output)
+	{
+		const boost::string_ref::size_type end = gdb_output.find_first_of(',');
+		async_class rc = [](boost::string_ref rescl)
+		{
+			static const std::map<boost::string_ref, async_class> classes = {
+				{ "stopped", async_class::stopped },
+				{ "running", async_class::running },
+				{ "thread-group-added", async_class::thread_group_added },
+				{ "thread-exited", async_class::thread_exited },
+				{ "thread-group-started", async_class::thread_group_started },
+				{ "thread-created", async_class::thread_created },
+				{ "library-loaded", async_class::library_loaded },
+				{ "breakpoint-created", async_class::breakpoint_created },
+				{ "breakpoint-modified", async_class::breakpoint_modified },
+				
+			};
+			auto it = classes.find(rescl);
+			if(it != classes.end())
+				return it->second;
+			else
+			{
+				std::cerr << "Notify maintainer of a missing async class: " << rescl << "\n";
+				return async_class::unknown;
+			}
+		}(wiertlo::slice(gdb_output, 0, end));
+		gdb_output = wiertlo::slice(gdb_output, end+1);
+		std::vector<result> result_sequence;
+		if(!gdb_output.empty())
+			result_sequence = parse_result_sequence(gdb_output);
+		async_output rec = { token, rc, result_sequence };
+		return rec;
+	}
+	
+	output parse(boost::string_ref gdb_output)
+	{
+		if(wiertlo::trim(gdb_output) == "(gdb)")
+			return end_of_output_tag();
+		const boost::string_ref starting_characters = "^*+=~@&";
+		const boost::string_ref::size_type end = gdb_output.find_first_of(starting_characters);
+		const user_token token(wiertlo::slice(gdb_output, 0, end));
+		const char recogniser_char = gdb_output[end];
+		
+		gdb_output = wiertlo::slice(gdb_output, end+1);
+		if(recogniser_char == '^')
+		{
+			return parse_result_record(token, gdb_output);
+		}
+		else if(recogniser_char == '*')
+		{
+			return async_record(exec_async_output(parse_async_record(token, gdb_output)));
+		}
+		else if(recogniser_char == '+')
+		{
+			return async_record(status_async_output(parse_async_record(token, gdb_output)));
+		}
+		else if(recogniser_char == '=')
+		{
+			return async_record(notify_async_output(parse_async_record(token, gdb_output)));
+		}
+		else if(recogniser_char == '~')
+		{
+			return stream_record(console_stream_output(string_from_c_string_literal(gdb_output)));
+		}
+		else if(recogniser_char == '@')
+		{
+			return stream_record(target_stream_output(string_from_c_string_literal(gdb_output)));
+		}
+		else if(recogniser_char == '&')
+		{
+			return stream_record(log_stream_output(string_from_c_string_literal(gdb_output)));
+		}
+		throw bad_parse("unexpected input");
 	}
 	
 	void mi_operation_verify::operator()(const std::string& tok)
@@ -59,6 +290,11 @@ namespace gdbplz
 			throw invalid_operation(tok);
 		if(trimtok.front() == '-')
 			throw invalid_operation(tok);
+	}
+	
+	std::string string_from_c_string_literal(boost::string_ref literal)
+	{
+		return string_from_c_string_literal_rest(literal).first;
 	}
 	
 	std::string c_string_literal_from_string(boost::string_ref literal)
@@ -92,21 +328,21 @@ namespace gdbplz
 		return result;
 	}
 	
-	std::string string_from_c_string_literal(boost::string_ref literal)
+	std::pair<std::string, boost::string_ref> string_from_c_string_literal_rest(boost::string_ref literal)
 	{
 		using wiertlo::trim;
 		using wiertlo::slice;
 		
 		std::string result;
-		literal = trim(literal);
-		if(!literal.starts_with('\"') || !literal.ends_with('\"'))
-			throw bad_parse("not a string literal (unquoted)");
+		if(!literal.starts_with('\"'))
+			throw bad_parse("not a string literal (doesn't start with a quote character)");
 		
 		bool escape_char = false;
 		std::string num;
-		
-		for(auto ch : slice(literal, 1, -1))
+		literal = slice(literal, 1);
+		for(boost::string_ref::size_type i = 0; i < literal.size(); ++i)
 		{
+			auto ch = literal[i];
 			if(num.size() > 0 && num.size() < 4)
 			{
 				num += ch;
@@ -147,12 +383,14 @@ namespace gdbplz
 					throw "NOT IMPLEMENTED";
 				escape_char = false;
 			}
-			else if(ch != '\\')
-				result += ch;
-			else
+			else if(ch == '\"')
+				return std::make_pair(result, wiertlo::slice(literal, i+1));
+			else if(ch == '\\')
 				escape_char = true;
+			else
+				result += ch;
 		}
-		return result;
+		throw bad_parse("not a string literal (unterminated)");
 	}
 	
 	std::ostream& operator<<(std::ostream& os, const user_token& token)

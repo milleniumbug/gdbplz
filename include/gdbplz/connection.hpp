@@ -18,7 +18,9 @@ namespace gdbplz
 	
 	class gdb_not_found : public connection_error
 	{
+	public:
 		boost::filesystem::path requested_gdb_instance;
+		gdb_not_found(boost::filesystem::path requested_gdb_instance);
 	};
 	
 	class not_a_valid_gdb_executable : public connection_error

@@ -1,5 +1,5 @@
-#ifndef GDBPLZ_SESSION_HPP_4FC8D6EA7D054C9CA02EEDFE868107A1
-#define GDBPLZ_SESSION_HPP_4FC8D6EA7D054C9CA02EEDFE868107A1
+#ifndef GDBPLZ_FUNCTION_CONTEXT_HPP_E066CFC4E7CD4BFCAE82237AEDB9CBD6
+#define GDBPLZ_FUNCTION_CONTEXT_HPP_E066CFC4E7CD4BFCAE82237AEDB9CBD6
 
 #include <functional>
 #include <boost/utility/string_ref.hpp>
@@ -10,22 +10,17 @@
 
 namespace gdbplz
 {	
-	class session
+	class function_context
 	{
 	private:
 		struct impl;
 		typedef wiertlo::pimpl_handle<impl> pimpl_handle_type;
 		pimpl_handle_type pi;
 	public:
-		session(gdbplz::connection conn);
+		function_id function() const;
+		source_location source_loc() const;
+		void evaluate_expression();
 		
-		void start();
-		void continue_program();
-		void kill();
-		
-		
-		void user_command(boost::string_ref command);
-		gdb_version version() const;
 	};
 }
 

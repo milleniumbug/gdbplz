@@ -3,11 +3,15 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/utility/string_ref.hpp>
+#include <boost/optional.hpp>
 #include "./utility/pimpl_handle.hpp"
 #include "./utility/strong_typedef.hpp"
+#include "./gdb_aux.hpp"
 
 namespace gdbplz
 {
+	class session;
+	
 	struct remote_params
 	{
 		
@@ -20,10 +24,7 @@ namespace gdbplz
 		std::vector<boost::string_ref> arguments = std::vector<boost::string_ref>();
 	};
 	
-	struct process_id : wiertlo::strong_typedef<int, process_id>
-	{
-		using wiertlo::strong_typedef<int, process_id>::strong_typedef;
-	};
+	WIERTLO_STRONG_TYPEDEF(process_id, int);
 	
 	class inferior
 	{
@@ -31,16 +32,24 @@ namespace gdbplz
 		struct impl;
 		typedef wiertlo::pimpl_handle<impl> pimpl_handle_type;
 		pimpl_handle_type pi;
+		
+		inferior(session& s, remote_params params);
+		inferior(session& s, local_params params);
+		inferior(session& s, process_id pid);
+		friend session;
 	public:
 		~inferior();
 		inferior(inferior&&);
 		inferior& operator=(inferior&&);
-		inferior(const inferior&);
-		inferior& operator=(const inferior&);
+		inferior(const inferior&) = delete;
+		inferior& operator=(const inferior&) = delete;
 		
-		inferior(remote_params params);
-		inferior(local_params params);
-		inferior(process_id pid);
+		void step();
+		void step_into();
+		void step_over();
+		
+		std::vector<function_id> lookup_function_by_name(boost::string_ref function_name);
+		boost::optional<function_id> lookup_function_by_source_location(const source_location& function_name);
 	};
 }
 

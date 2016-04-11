@@ -12,6 +12,8 @@
 
 namespace gdbplz
 {
+	struct end_of_output_tag {};
+	
 	class empty_container : std::invalid_argument
 	{
 	public:
@@ -58,7 +60,19 @@ namespace gdbplz
 	typedef std::pair<std::string, value> result;
 	
 	enum class result_class { done, connected, error, exit };
-	enum class async_class { stopped, running };
+	enum class async_class {
+		unknown,
+		stopped,
+		running,
+		thread_group_added,
+		thread_exited,
+		thread_group_started,
+		thread_created,
+		library_loaded,
+		thread_group_exited,
+		breakpoint_created,
+		breakpoint_modified
+	};
 	
 	struct result_record
 	{
@@ -70,6 +84,7 @@ namespace gdbplz
 	struct async_output
 	{
 		user_token token;
+		async_class state;
 		std::vector<result> results;
 	};
 	
@@ -96,7 +111,8 @@ namespace gdbplz
 	typedef boost::variant<
 		result_record,
 		async_record,
-		stream_record
+		stream_record,
+		end_of_output_tag
 	> output;
 	
 	struct option
@@ -144,9 +160,18 @@ namespace gdbplz
 	};
 	std::ostream& operator<<(std::ostream& os, const cli_command& command);
 	
+	std::pair<value, boost::string_ref> parse_tuple_rest(boost::string_ref gdb_output);
+	std::pair<value, boost::string_ref> parse_list_rest(boost::string_ref gdb_output);
+	std::pair<value, boost::string_ref> parse_value_rest(boost::string_ref gdb_output);
+	std::pair<result, boost::string_ref> parse_result_rest(boost::string_ref gdb_output);
+	std::vector<result> parse_result_sequence(boost::string_ref gdb_output);
+	result_record parse_result_record(user_token token, boost::string_ref gdb_output);
+	async_output parse_async_record(user_token token, boost::string_ref gdb_output);
+	
+	std::pair<std::string, boost::string_ref> string_from_c_string_literal_rest(boost::string_ref literal);
 	std::string c_string_literal_from_string(boost::string_ref literal);
 	std::string string_from_c_string_literal(boost::string_ref literal);
-	output parse_next(boost::string_ref gdb_output);
+	output parse(boost::string_ref gdb_output);
 }
 
 #endif

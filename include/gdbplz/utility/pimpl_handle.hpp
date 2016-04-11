@@ -104,13 +104,15 @@ namespace wiertlo
 			return *reinterpret_cast<HandleType*>(pimpl.buffer);
 		}
 		
-		static auto get(const pimpl_handle_type& handle) ->
+		template<typename T>
+		static auto get(const T& handle) ->
 			decltype((*get_handle(handle)))
 		{
 			return *get_handle(handle);
 		}
 		
-		static auto get(pimpl_handle_type& handle) ->
+		template<typename T>
+		static auto get(T& handle) ->
 			decltype((*get_handle(handle)))
 		{
 			return *get_handle(handle);

@@ -1,3 +1,4 @@
+#include <functional>
 #include "../include/gdbplz/gdb_io.hpp"
 #include "../include/gdbplz/session.hpp"
 
@@ -70,5 +71,39 @@ namespace gdbplz
 		others(others)
 	{
 		
+	}
+	
+	struct function_id::impl : wiertlo::pimpl_implementation_mixin<function_id::pimpl_handle_type, void*, std::string>
+	{
+		
+	};
+	
+	function_id::function_id(const function_id&) = default;
+	function_id& function_id::operator=(const function_id&) = default;
+	function_id::function_id(function_id&&) = default;
+	function_id& function_id::operator=(function_id&&) = default;
+	function_id::~function_id() = default;
+	
+	bool function_id::operator<(const function_id& other) const
+	{
+		return impl::get_handle(this->pi) < impl::get_handle(other.pi);
+	}
+	
+	bool function_id::operator==(const function_id& other) const
+	{
+		return impl::get_handle(this->pi) == impl::get_handle(other.pi);
+	}
+	
+	std::string function_id::to_string() const
+	{
+		return impl::get_handle(this->pi);
+	}
+}
+
+namespace std
+{
+	std::size_t hash<::gdbplz::function_id>::operator()(const ::gdbplz::function_id& id) const
+	{
+		return std::hash<std::string>()(::gdbplz::function_id::impl::get_handle(id.pi));
 	}
 }
