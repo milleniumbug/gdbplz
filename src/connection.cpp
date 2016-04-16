@@ -2,21 +2,52 @@
 #include <memory>
 #include <thread>
 #include <chrono>
+#include <future>
+#include <boost/lexical_cast.hpp>
+#include <boost/variant.hpp>
 #include <boost/tokenizer.hpp>
+#include <map>
 #include "../../../NotMine/jucipp/tiny-process-library/process.hpp"
 #include "../include/gdbplz/connection.hpp"
+#include "../include/gdbplz/gdb_io.hpp"
 #include "../include/gdbplz/utility/blocking_queue.hpp"
 
 namespace gdbplz
 {
 	struct connection::impl : wiertlo::pimpl_implementation_mixin<connection::pimpl_handle_type, connection::impl>
-	{	
-		utility::blocking_queue<std::string> input_queue;
+	{
+		wiertlo::blocking_queue<
+			boost::variant<
+				input,
+				output>> input_queue;
 		boost::filesystem::path gdb_executable;
 		std::unique_ptr<Process> gdb_process;
+		std::map<user_token, std::promise<result_record>> promises;
+		std::thread event_thread;
+		
+		void send(boost::string_ref c)
+		{
+			gdb_process->write(c.data(), c.size());
+		}
+		
+		void exit()
+		{
+			if(gdb_process)
+			{
+				input_queue.push(input(end_work()));
+				gdb_process->write("-gdb-exit\n");
+				std::this_thread::sleep_for(std::chrono::milliseconds(400));
+				gdb_process->kill();
+			}
+		}
 	};
 	
-	connection::~connection() = default;
+	connection::~connection()
+	{
+		auto& i = impl::get(pi);
+		i.exit();
+	}
+	
 	connection::connection(connection&&) = default;
 	connection& connection::operator=(connection&&) = default;
 	
@@ -28,33 +59,10 @@ namespace gdbplz
 		restart();
 	}
 	
-	void connection::send(boost::string_ref c)
-	{
-		auto& i = impl::get(pi);
-		i.gdb_process->write(c.data(), c.size());
-	}
-	
-	boost::optional<std::string> connection::poll()
-	{
-		auto& i = impl::get(pi);
-		return i.input_queue.try_pop();
-	}
-	
-	boost::optional<std::string> connection::wait()
-	{
-		auto& i = impl::get(pi);
-		return i.input_queue.pop();
-	}
-	
 	void connection::restart()
 	{
 		auto& i = impl::get(pi);
-		if(i.gdb_process)
-		{
-			i.gdb_process->write("-gdb-exit\n");
-			std::this_thread::sleep_for(std::chrono::milliseconds(200));
-			i.gdb_process->kill();
-		}
+		i.exit();
 		const std::string extra_params = "";
 		i.input_queue.clear();
 		i.gdb_process.reset(new Process(
@@ -70,11 +78,30 @@ namespace gdbplz
 					std::string> tokenizer(output, sep);
 				for(auto line : tokenizer)
 				{
-					i.input_queue.push(line);
+					i.input_queue.push(gdbplz::parse(line));
 				}
 			}
 		));
 		// TODO: throw if you can't launch gdb
+	}
+	
+	void connection::send(mi_command comm)
+	{
+		auto& i = impl::get(pi);
+		i.send(boost::lexical_cast<std::string>(comm));
+		i.input_queue.push(input(std::move(comm)));
+	}
+	
+	boost::optional<boost::variant<input, output>> connection::wait()
+	{
+		auto& i = impl::get(pi);
+		return i.input_queue.pop();
+	}
+	
+	boost::optional<boost::variant<input, output>> connection::poll()
+	{
+		auto& i = impl::get(pi);
+		return i.input_queue.try_pop();
 	}
 	
 	boost::optional<boost::filesystem::path> guess_gdb_path()

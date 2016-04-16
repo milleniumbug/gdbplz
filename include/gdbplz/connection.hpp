@@ -5,8 +5,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
 #include <string>
+#include <future>
 #include <stdexcept>
 #include "./utility/pimpl_handle.hpp"
+#include "./gdb_io.hpp"
 
 namespace gdbplz
 {
@@ -36,21 +38,21 @@ namespace gdbplz
 		struct impl;
 		typedef wiertlo::pimpl_handle<impl> pimpl_handle_type;
 		pimpl_handle_type pi;
+		
 	public:
+		~connection();
 		connection(connection&&);
 		connection& operator=(connection&&);
 		connection(const connection&) = delete;
 		connection& operator=(const connection&) = delete;
-		~connection();
 		
 		connection(boost::filesystem::path gdb_executable);
 		
-		// 
-		void send(boost::string_ref c);
-		boost::optional<std::string> poll();
-		boost::optional<std::string> wait();
-		void restart();
+		void send(mi_command comm);
+		boost::optional<boost::variant<input, output>> wait();
+		boost::optional<boost::variant<input, output>> poll();
 		
+		void restart();
 	};
 }
 

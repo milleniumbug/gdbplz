@@ -59,4 +59,10 @@
 #define WIERTLO_DEBUG_BREAK // TODO
 #endif
 
+#ifdef _MSC_VER
+#define WIERTLO_DEPRECATED(...) __declspec(deprecated) __VA_ARGS__
+#elif defined(__clang__) || defined(__GNUC__)
+#define WIERTLO_DEPRECATED(...) __VA_ARGS__ __attribute__ ((deprecated))
+#endif
+
 #endif

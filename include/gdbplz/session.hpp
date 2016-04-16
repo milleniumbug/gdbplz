@@ -17,14 +17,16 @@ namespace gdbplz
 		typedef wiertlo::pimpl_handle<impl> pimpl_handle_type;
 		pimpl_handle_type pi;
 	public:
+		~session();
+		session(session&&);
+		session& operator=(session&&);
+		session(const session&) = delete;
+		session& operator=(const session&) = delete;
+		
 		session(gdbplz::connection conn);
 		
-		void start();
-		void continue_program();
-		void kill();
+		inferior launch_local_program(local_params params);
 		
-		
-		void user_command(boost::string_ref command);
 		gdb_version version() const;
 	};
 }

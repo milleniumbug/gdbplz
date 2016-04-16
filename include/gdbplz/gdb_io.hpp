@@ -65,13 +65,25 @@ namespace gdbplz
 		stopped,
 		running,
 		thread_group_added,
-		thread_exited,
+		thread_group_removed,
 		thread_group_started,
-		thread_created,
-		library_loaded,
 		thread_group_exited,
+		thread_created,
+		thread_exited,
+		thread_selected,
+		library_loaded,
+		library_unloaded,
+		traceframe_changed,
+		tsv_created,
+		tsv_modified,
+		tsv_deleted,
 		breakpoint_created,
-		breakpoint_modified
+		breakpoint_modified,
+		breakpoint_deleted,
+		record_started,
+		record_stopped,
+		cmd_param_changed,
+		memory_changed,
 	};
 	
 	struct result_record
@@ -160,6 +172,9 @@ namespace gdbplz
 	};
 	std::ostream& operator<<(std::ostream& os, const cli_command& command);
 	
+	struct end_work {};
+	typedef boost::variant<cli_command, mi_command, end_work> input;
+	
 	std::pair<value, boost::string_ref> parse_tuple_rest(boost::string_ref gdb_output);
 	std::pair<value, boost::string_ref> parse_list_rest(boost::string_ref gdb_output);
 	std::pair<value, boost::string_ref> parse_value_rest(boost::string_ref gdb_output);
@@ -167,6 +182,8 @@ namespace gdbplz
 	std::vector<result> parse_result_sequence(boost::string_ref gdb_output);
 	result_record parse_result_record(user_token token, boost::string_ref gdb_output);
 	async_output parse_async_record(user_token token, boost::string_ref gdb_output);
+	
+	std::string to_string(const value& val);
 	
 	std::pair<std::string, boost::string_ref> string_from_c_string_literal_rest(boost::string_ref literal);
 	std::string c_string_literal_from_string(boost::string_ref literal);

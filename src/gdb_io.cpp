@@ -1,4 +1,5 @@
 #include <map>
+#include <sstream>
 #include <iostream>
 #include <type_traits>
 #include <stdexcept>
@@ -212,13 +213,25 @@ namespace gdbplz
 				{ "stopped", async_class::stopped },
 				{ "running", async_class::running },
 				{ "thread-group-added", async_class::thread_group_added },
-				{ "thread-exited", async_class::thread_exited },
+				{ "thread-group-removed", async_class::thread_group_removed },
 				{ "thread-group-started", async_class::thread_group_started },
+				{ "thread-group-exited", async_class::thread_group_exited },
 				{ "thread-created", async_class::thread_created },
+				{ "thread-exited", async_class::thread_exited },
+				{ "thread-selected", async_class::thread_selected },
 				{ "library-loaded", async_class::library_loaded },
+				{ "library-unloaded", async_class::library_unloaded },
+				{ "traceframe-changed", async_class::traceframe_changed },
+				{ "tsv-created", async_class::tsv_created },
+				{ "tsv-modified", async_class::tsv_modified },
+				{ "tsv-deleted", async_class::tsv_deleted },
 				{ "breakpoint-created", async_class::breakpoint_created },
 				{ "breakpoint-modified", async_class::breakpoint_modified },
-				
+				{ "breakpoint-deleted", async_class::breakpoint_deleted },
+				{ "record-started", async_class::record_started },
+				{ "record-stopped", async_class::record_stopped },
+				{ "cmd-param-changed", async_class::cmd_param_changed },
+				{ "memory-changed", async_class::memory_changed },
 			};
 			auto it = classes.find(rescl);
 			if(it != classes.end())
@@ -380,7 +393,7 @@ namespace gdbplz
 				if(ch == 'x')
 					num = "0x";
 				if(ch == 'u')
-					throw "NOT IMPLEMENTED";
+					throw bad_parse("unicode escape sequences not implemented");
 				escape_char = false;
 			}
 			else if(ch == '\"')
@@ -433,6 +446,7 @@ namespace gdbplz
 		{
 			os << " " << param.get();
 		}
+		os << "\n";
 		return os;
 	}
 	
@@ -440,5 +454,67 @@ namespace gdbplz
 	{
 		os << command.token << wiertlo::trim(command.command) << "\n";
 		return os;
+	}
+	
+	std::string to_string(const value& val)
+	{
+		std::stringstream ss;
+		struct stringifier_visitor : public boost::static_visitor<void>
+		{
+			std::ostream& os;
+			
+			void operator()(const std::string& s) const
+			{
+				os << c_string_literal_from_string(s);
+			}
+			
+			void operator()(const std::unordered_map<std::string, value>& s) const
+			{
+				os << '{';
+				bool first = true;
+				for(auto& kvp : s)
+				{
+					if(!first)
+						os << ',';
+					first = false;
+					os << kvp.first << '=';
+					boost::apply_visitor(*this, kvp.second);
+				}
+				os << '}';
+			}
+			
+			void operator()(const std::vector<value>& s) const
+			{
+				os << '[';
+				bool first = true;
+				for(auto& v : s)
+				{
+					if(!first)
+						os << ',';
+					first = false;
+					boost::apply_visitor(*this, v);
+				}
+				os << ']';
+			}
+			
+			void operator()(const std::vector<std::pair<std::string, value>>& s) const
+			{
+				os << '[';
+				bool first = true;
+				for(auto& kvp : s)
+				{
+					if(!first)
+						os << ',';
+					first = false;
+					os << kvp.first << '=';
+					boost::apply_visitor(*this, kvp.second);
+				}
+				os << ']';
+			}
+			
+			stringifier_visitor(std::ostream& os) : os(os) {}
+		} vis(ss);
+		boost::apply_visitor(vis, val);
+		return ss.str();
 	}
 }

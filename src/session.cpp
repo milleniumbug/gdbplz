@@ -1,20 +1,109 @@
 #include <functional>
+#include <future>
+#include <thread>
+#include <map>
+#include "../include/gdbplz/utility/blocking_queue.hpp"
+#include "../include/gdbplz/utility/lambda_visitor.hpp"
 #include "../include/gdbplz/gdb_io.hpp"
 #include "../include/gdbplz/session.hpp"
 
 namespace gdbplz
 {
+	template<typename T>
+	class Counter
+	{
+	private:
+		T c;
+	public:
+		Counter() { c = T(); }
+		T operator()() { return ++c; }
+	};
+	
 	struct session::impl : wiertlo::pimpl_implementation_mixin<session::pimpl_handle_type, session::impl>
 	{
-		unsigned token_counter;
-		connection connection_;
+		Counter<unsigned> token_counter; // access from the class
+		connection connection_; // (thread-safe)
+		std::thread event_thread;
 		
-		result_record send_mi_command(const mi_command& comm)
+		impl(connection connection_) :
+			token_counter(),
+			connection_(std::move(connection_))
 		{
-			// TODO: implement
-			return result_record{ comm.token, result_class::done, std::vector<result>() };
-		};
+			
+		}
 	};
+	
+	session::~session()
+	{
+		auto& i = impl::get(pi);
+		i.event_thread.detach();
+	}
+	
+	session::session(session&&) = default;
+	session& session::operator=(session&&) = default;
+	
+	session::session(gdbplz::connection conn) :
+		pi(impl::create_pimpl_handle(std::unique_ptr<impl>(new impl(std::move(conn)))))
+	{
+		auto& i = impl::get(pi);
+		// set up thread now, when everything's initialized
+		i.event_thread = std::thread([this]()
+		{
+			auto& i = impl::get(pi);
+			bool quit = false;
+			do
+			{
+				auto resopt = i.connection_.wait();
+				if(!resopt)
+					continue;
+				boost::apply_visitor(wiertlo::make_lambda_visitor<void>(
+					[&](const output& out)
+					{
+						boost::apply_visitor(wiertlo::make_lambda_visitor<void>(
+						[&](const result_record& res)
+						{
+							
+						},
+						[&](const async_record& as)
+						{
+							
+						},
+						[&](const stream_record& str)
+						{
+							
+						},
+						[&](end_of_output_tag)
+						{
+							
+						}), out);
+					},
+					[&](const input& in)
+					{
+						boost::apply_visitor(wiertlo::make_lambda_visitor<void>(
+						[&](const mi_command& comm)
+						{
+							
+						},
+						[&](const cli_command& comm)
+						{
+							// TODO:
+						},
+						[&](end_work)
+						{
+							quit = true;
+						}), in);
+					}), *resopt);
+			} while(!quit);
+		});
+	}
+	
+	inferior session::launch_local_program(local_params params)
+	{
+		auto& i = impl::get(pi);
+		//i.connection_.send(mi_command{ i.token_counter(), "exec-run"});
+		//params.arguments;
+		return inferior(*this, params);
+	}
 	
 	gdb_version session::version() const
 	{

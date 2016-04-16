@@ -3,6 +3,7 @@
 
 #include "./utility/pimpl_handle.hpp"
 #include "./function_context.hpp"
+#include "./breakpoint.hpp"
 #include <vector>
 
 namespace gdbplz
@@ -24,6 +25,7 @@ namespace gdbplz
 		thread(const thread&) = delete;
 		thread& operator=(const thread&) = delete;
 		
+		armed_breakpoint arm_breakpoint(const breakpoint& br);
 		std::vector<function_context> backtrace();
 	};
 }
