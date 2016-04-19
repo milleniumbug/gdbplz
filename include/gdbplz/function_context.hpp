@@ -6,7 +6,7 @@
 #include "./connection.hpp"
 #include "./inferior.hpp"
 #include "./gdb_aux.hpp"
-#include "./utility/pimpl_handle.hpp"
+#include <wiertlo/pimpl_handle.hpp>
 
 namespace gdbplz
 {	

@@ -8,7 +8,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "./utility/strong_typedef.hpp"
+#include <wiertlo/strong_typedef.hpp>
 
 namespace gdbplz
 {
@@ -31,7 +31,7 @@ namespace gdbplz
 	};
 	
 	template<typename T>
-	struct nonempty : wiertlo::strong_typedef<T, nonempty<T>, nonempty_verify> { using wiertlo::strong_typedef<T, nonempty<T>, nonempty_verify>::strong_typedef; };
+	struct nonempty : wiertlo::strong_typedef<nonempty<T>, T, nonempty_verify> { using wiertlo::strong_typedef<nonempty<T>, T, nonempty_verify>::strong_typedef; };
 	
 	class invalid_token : std::invalid_argument
 	{

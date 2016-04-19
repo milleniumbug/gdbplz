@@ -4,8 +4,7 @@
 #include <type_traits>
 #include <stdexcept>
 #include "../include/gdbplz/utility/ascii.hpp"
-#include "../include/gdbplz/utility/string.hpp"
-#include "../include/gdbplz/utility/compiler_hints.hpp"
+#include <wiertlo/string.hpp>
 #include "../include/gdbplz/gdb_io.hpp"
 
 namespace gdbplz

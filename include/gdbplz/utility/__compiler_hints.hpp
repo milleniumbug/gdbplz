@@ -60,9 +60,9 @@
 #endif
 
 #ifdef _MSC_VER
-#define WIERTLO_DEPRECATED(...) __declspec(deprecated) __VA_ARGS__
+#define WIERTLO_DEPRECATED_FUNCTION(...) __declspec(deprecated) __VA_ARGS__
 #elif defined(__clang__) || defined(__GNUC__)
-#define WIERTLO_DEPRECATED(...) __VA_ARGS__ __attribute__ ((deprecated))
+#define WIERTLO_DEPRECATED_FUNCTION(...) __VA_ARGS__ __attribute__ ((deprecated))
 #endif
 
 #endif

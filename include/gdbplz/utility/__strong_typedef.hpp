@@ -55,7 +55,6 @@ namespace wiertlo
 	private:
 		T value;
 	public:
-		// TODO: is_related fix to avoid calling copy constructors
 		template<typename... Args, typename std::enable_if<
 			!detail::is_related<strong_typedef<T, Tag>, Args...>::value
 		>::type* = nullptr>

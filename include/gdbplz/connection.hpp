@@ -7,7 +7,7 @@
 #include <string>
 #include <future>
 #include <stdexcept>
-#include "./utility/pimpl_handle.hpp"
+#include <wiertlo/pimpl_handle.hpp>
 #include "./gdb_io.hpp"
 
 namespace gdbplz

@@ -1,5 +1,5 @@
 #include <boost/utility/string_ref.hpp>
-#include "../include/gdbplz/utility/string.hpp"
+#include <wiertlo/string.hpp>
 #include "../Catch/include/catch.hpp"
 
 TEST_CASE("slice empty string", "[slice]")

@@ -1,7 +1,7 @@
 #ifndef GDBPLZ_THREAD_HPP_E53E234D18C94C8AB705CCD03FE91E42
 #define GDBPLZ_THREAD_HPP_E53E234D18C94C8AB705CCD03FE91E42
 
-#include "./utility/pimpl_handle.hpp"
+#include <wiertlo/pimpl_handle.hpp>
 #include "./function_context.hpp"
 #include "./breakpoint.hpp"
 #include <vector>

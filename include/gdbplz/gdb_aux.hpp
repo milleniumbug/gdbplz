@@ -4,7 +4,7 @@
 #include <boost/utility/string_ref.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/operators.hpp>
-#include "./utility/pimpl_handle.hpp"
+#include <wiertlo/pimpl_handle.hpp>
 
 namespace gdbplz
 {

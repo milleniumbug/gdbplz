@@ -2,8 +2,8 @@
 #include <boost/tokenizer.hpp>
 #include <boost/variant.hpp>
 #include "../include/gdbplz/gdb_io.hpp"
-#include "../include/gdbplz/utility/string.hpp"
-#include "../include/gdbplz/utility/lambda_visitor.hpp"
+#include <wiertlo/string.hpp>
+#include <wiertlo/lambda_visitor.hpp>
 #include "../Catch/include/catch.hpp"
 #include "../rapidcheck/include/rapidcheck.h"
 

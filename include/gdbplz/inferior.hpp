@@ -4,8 +4,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/utility/string_ref.hpp>
 #include <boost/optional.hpp>
-#include "./utility/pimpl_handle.hpp"
-#include "./utility/strong_typedef.hpp"
+#include <wiertlo/pimpl_handle.hpp>
+#include <wiertlo/strong_typedef.hpp>
 #include "./gdb_aux.hpp"
 
 namespace gdbplz

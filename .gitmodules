@@ -4,3 +4,6 @@
 [submodule "rapidcheck"]
 	path = rapidcheck
 	url = https://github.com/emil-e/rapidcheck
+[submodule "wiertlo"]
+	path = wiertlo
+	url = https://github.com/milleniumbug/wiertlo

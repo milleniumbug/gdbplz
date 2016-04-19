@@ -23,6 +23,7 @@ set(SOURCE_FILES
 	../../NotMine/jucipp/tiny-process-library/process_unix.cpp)
 
 include_directories("${CMAKE_SOURCE_DIR}/include")
+include_directories("${CMAKE_SOURCE_DIR}/wiertlo/include")
 include_directories(../../NotMine/jucipp/tiny-process-library)
 
 add_library(gdbplz ${SOURCE_FILES})

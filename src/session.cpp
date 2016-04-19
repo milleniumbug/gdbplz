@@ -3,7 +3,7 @@
 #include <thread>
 #include <map>
 #include "../include/gdbplz/utility/blocking_queue.hpp"
-#include "../include/gdbplz/utility/lambda_visitor.hpp"
+#include <wiertlo/lambda_visitor.hpp>
 #include "../include/gdbplz/gdb_io.hpp"
 #include "../include/gdbplz/session.hpp"
 
