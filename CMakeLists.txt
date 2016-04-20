@@ -12,7 +12,7 @@ find_package(Threads)
 add_subdirectory("${CMAKE_SOURCE_DIR}/rapidcheck")
 
 set(CMAKE_CXX_EXTENSIONS OFF)
-file(GLOB_RECURSE INCLUDES include/*.cpp)
+file(GLOB_RECURSE INCLUDES include/*.hpp)
 file(GLOB SOURCES src/*.cpp)
 
 set(SOURCE_FILES
