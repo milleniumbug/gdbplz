@@ -3,10 +3,10 @@
 
 #include <functional>
 #include <boost/utility/string_ref.hpp>
-#include "./connection.hpp"
-#include "./inferior.hpp"
-#include "./gdb_aux.hpp"
 #include <wiertlo/pimpl_handle.hpp>
+#include "./function_id.hpp"
+#include "./expression.hpp"
+#include "./source_location.hpp"
 
 namespace gdbplz
 {	
@@ -19,7 +19,7 @@ namespace gdbplz
 	public:
 		function_id function() const;
 		source_location source_loc() const;
-		void evaluate_expression();
+		std::shared_ptr<expression> evaluate_expression();
 		
 	};
 }

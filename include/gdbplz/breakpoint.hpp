@@ -1,9 +1,9 @@
 #ifndef GDBPLZ_BREAKPOINT_HPP_460C3356BF4D4FADB584CFBCCCDBD53D
 #define GDBPLZ_BREAKPOINT_HPP_460C3356BF4D4FADB584CFBCCCDBD53D
 
-#include "./gdb_io.hpp"
-#include "./gdb_aux.hpp"
 #include <wiertlo/pimpl_handle.hpp>
+#include "./source_location.hpp"
+#include "./gdb_raw.hpp"
 
 namespace gdbplz
 {
@@ -26,16 +26,8 @@ namespace gdbplz
 	
 	class armed_breakpoint
 	{
-	private:
-		struct impl;
-		typedef wiertlo::pimpl_handle<impl, void*, 16> pimpl_handle_type;
-		pimpl_handle_type pi;
 	public:
-		~armed_breakpoint();
-		armed_breakpoint(armed_breakpoint&& other);
-		armed_breakpoint& operator=(armed_breakpoint&& other);
-		armed_breakpoint(const armed_breakpoint& other) = delete;
-		armed_breakpoint& operator=(const armed_breakpoint& other) = delete;
+		virtual ~armed_breakpoint() {}
 		
 		void set_enabled(bool enable);
 		breakpoint info();

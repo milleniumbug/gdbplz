@@ -3,9 +3,10 @@
 #include <iostream>
 #include <type_traits>
 #include <stdexcept>
-#include "../include/gdbplz/utility/ascii.hpp"
 #include <wiertlo/string.hpp>
-#include "../include/gdbplz/gdb_io.hpp"
+#include <gdbplz/gdb_raw.hpp>
+#include <gdbplz/internal/parsing.hpp>
+#include <gdbplz/utility/ascii.hpp>
 
 namespace gdbplz
 {
@@ -440,7 +441,8 @@ namespace gdbplz
 		{
 			os << " " << opt;
 		}
-		os << " --";
+		os << " ";
+		//os << " --";
 		for(auto&& param : command.parameters)
 		{
 			os << " " << param.get();

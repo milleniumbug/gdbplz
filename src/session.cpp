@@ -2,26 +2,20 @@
 #include <future>
 #include <thread>
 #include <map>
-#include "../include/gdbplz/utility/blocking_queue.hpp"
 #include <wiertlo/lambda_visitor.hpp>
-#include "../include/gdbplz/gdb_io.hpp"
-#include "../include/gdbplz/session.hpp"
+#include <gdbplz/utility/blocking_queue.hpp>
+#include <gdbplz/utility/counter.hpp>
+#include <gdbplz/gdb_raw.hpp>
+#include <gdbplz/gdb_version.hpp>
+#include <gdbplz/function_id.hpp>
+#include <gdbplz/source_location.hpp>
+#include <gdbplz/session.hpp>
 
 namespace gdbplz
 {
-	template<typename T>
-	class Counter
-	{
-	private:
-		T c;
-	public:
-		Counter() { c = T(); }
-		T operator()() { return ++c; }
-	};
-	
 	struct session::impl : wiertlo::pimpl_implementation_mixin<session::pimpl_handle_type, session::impl>
 	{
-		Counter<unsigned> token_counter; // access from the class
+		utility::Counter<unsigned> token_counter; // access from the class
 		connection connection_; // (thread-safe)
 		std::thread event_thread;
 		
@@ -55,7 +49,7 @@ namespace gdbplz
 			{
 				auto resopt = i.connection_.wait();
 				if(!resopt)
-					continue;
+					throw "FUCK"; // TODO: suitable exception type
 				boost::apply_visitor(wiertlo::make_lambda_visitor<void>(
 					[&](const output& out)
 					{
@@ -97,12 +91,12 @@ namespace gdbplz
 		});
 	}
 	
-	inferior session::launch_local_program(local_params params)
+	std::shared_ptr<inferior> session::launch_local_program(local_params params)
 	{
 		auto& i = impl::get(pi);
-		//i.connection_.send(mi_command{ i.token_counter(), "exec-run"});
+		i.connection_.send(mi_command{ std::to_string(i.token_counter()), "exec-run"});
 		//params.arguments;
-		return inferior(*this, params);
+		return nullptr;
 	}
 	
 	gdb_version session::version() const
@@ -186,6 +180,13 @@ namespace gdbplz
 	std::string function_id::to_string() const
 	{
 		return impl::get_handle(this->pi);
+	}
+	
+	source_location::source_location(boost::filesystem::path source, unsigned long long line) :
+		source(source),
+		line(line)
+	{
+		
 	}
 }
 

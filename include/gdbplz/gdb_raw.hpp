@@ -1,5 +1,5 @@
-#ifndef GDBPLZ_INPUT_PARSE_HPP_BAC8A7E229994263AE976E0FC163F31E
-#define GDBPLZ_INPUT_PARSE_HPP_BAC8A7E229994263AE976E0FC163F31E
+#ifndef GDBPLZ_GDB_RAW_HPP_BAC8A7E229994263AE976E0FC163F31E
+#define GDBPLZ_GDB_RAW_HPP_BAC8A7E229994263AE976E0FC163F31E
 
 #include <boost/utility/string_ref.hpp>
 #include <boost/variant.hpp>
@@ -174,21 +174,6 @@ namespace gdbplz
 	
 	struct end_work {};
 	typedef boost::variant<cli_command, mi_command, end_work> input;
-	
-	std::pair<value, boost::string_ref> parse_tuple_rest(boost::string_ref gdb_output);
-	std::pair<value, boost::string_ref> parse_list_rest(boost::string_ref gdb_output);
-	std::pair<value, boost::string_ref> parse_value_rest(boost::string_ref gdb_output);
-	std::pair<result, boost::string_ref> parse_result_rest(boost::string_ref gdb_output);
-	std::vector<result> parse_result_sequence(boost::string_ref gdb_output);
-	result_record parse_result_record(user_token token, boost::string_ref gdb_output);
-	async_output parse_async_record(user_token token, boost::string_ref gdb_output);
-	
-	std::string to_string(const value& val);
-	
-	std::pair<std::string, boost::string_ref> string_from_c_string_literal_rest(boost::string_ref literal);
-	std::string c_string_literal_from_string(boost::string_ref literal);
-	std::string string_from_c_string_literal(boost::string_ref literal);
-	output parse(boost::string_ref gdb_output);
 }
 
 #endif

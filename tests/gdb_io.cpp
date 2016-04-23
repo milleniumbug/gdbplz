@@ -1,9 +1,10 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/variant.hpp>
-#include "../include/gdbplz/gdb_io.hpp"
 #include <wiertlo/string.hpp>
 #include <wiertlo/lambda_visitor.hpp>
+#include <gdbplz/gdb_raw.hpp>
+#include <gdbplz/internal/parsing.hpp>
 #include "../Catch/include/catch.hpp"
 #include "../rapidcheck/include/rapidcheck.h"
 
@@ -92,7 +93,7 @@ TEST_CASE("round-trip conversion rapidcheck", "[parse]")
 TEST_CASE("generating mi commands", "[generate]")
 {
 	gdbplz::mi_command cmd{ "42", "gdb-version" };
-	REQUIRE(boost::lexical_cast<std::string>(cmd) == "42-gdb-version --\n");
+	REQUIRE(boost::lexical_cast<std::string>(cmd) == "42-gdb-version \n");
 }
 
 TEST_CASE("simple command log", "[parse]")

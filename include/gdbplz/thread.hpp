@@ -8,25 +8,19 @@
 
 namespace gdbplz
 {
-	class inferior;
 	
 	class thread
 	{
-	private:
-		struct impl;
-		typedef wiertlo::pimpl_handle<impl> pimpl_handle_type;
-		pimpl_handle_type pi;
-		
-		friend inferior;
 	public:
-		~thread();
-		thread(thread&&);
-		thread& operator=(thread&&);
-		thread(const thread&) = delete;
-		thread& operator=(const thread&) = delete;
+		virtual ~thread() {}
 		
-		armed_breakpoint arm_breakpoint(const breakpoint& br);
-		std::vector<function_context> backtrace();
+		virtual void step() = 0;
+		virtual void step_into() = 0;
+		virtual void step_over() = 0;
+		
+		virtual std::shared_ptr<expression> arm_watch() = 0;
+		virtual std::shared_ptr<armed_breakpoint> arm_breakpoint(const breakpoint& br) = 0;
+		virtual std::vector<function_context> backtrace() = 0;
 	};
 }
 

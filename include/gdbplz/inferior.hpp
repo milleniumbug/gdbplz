@@ -4,52 +4,24 @@
 #include <boost/filesystem.hpp>
 #include <boost/utility/string_ref.hpp>
 #include <boost/optional.hpp>
-#include <wiertlo/pimpl_handle.hpp>
 #include <wiertlo/strong_typedef.hpp>
-#include "./gdb_aux.hpp"
 
 namespace gdbplz
 {
-	class session;
-	
-	struct remote_params
-	{
-		
-	};
-	
-	struct local_params
-	{
-		boost::filesystem::path debugged_executable;
-		boost::filesystem::path symbol_file = debugged_executable;
-		std::vector<boost::string_ref> arguments = std::vector<boost::string_ref>();
-	};
-	
-	WIERTLO_STRONG_TYPEDEF(process_id, int);
+	class function_id;
+	class thread;
+	class source_location;
 	
 	class inferior
 	{
-	private:
-		struct impl;
-		typedef wiertlo::pimpl_handle<impl> pimpl_handle_type;
-		pimpl_handle_type pi;
-		
-		inferior(session& s, remote_params params);
-		inferior(session& s, local_params params);
-		inferior(session& s, process_id pid);
-		friend session;
 	public:
-		~inferior();
-		inferior(inferior&&);
-		inferior& operator=(inferior&&);
-		inferior(const inferior&) = delete;
-		inferior& operator=(const inferior&) = delete;
+		virtual ~inferior() {}
 		
-		void step();
-		void step_into();
-		void step_over();
+		virtual std::vector<thread*> get_threads() = 0;
+		virtual void kill() = 0;
 		
-		std::vector<function_id> lookup_function_by_name(boost::string_ref function_name);
-		boost::optional<function_id> lookup_function_by_source_location(const source_location& function_name);
+		virtual std::vector<function_id> lookup_function_by_name(boost::string_ref function_name) = 0;
+		virtual boost::optional<function_id> lookup_function_by_source_location(const source_location& function_name) = 0;
 	};
 }
 

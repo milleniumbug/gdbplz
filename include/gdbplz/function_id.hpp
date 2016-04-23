@@ -1,27 +1,12 @@
-#ifndef GDBPLZ_GDB_AUX_HPP_4CF660BFB9BA4A3A93B42A2CF250373E
-#define GDBPLZ_GDB_AUX_HPP_4CF660BFB9BA4A3A93B42A2CF250373E
+#ifndef GDBPLZ_FUNCTION_ID_HPP_E333F544048347969A16EC6D16507FA2
+#define GDBPLZ_FUNCTION_ID_HPP_E333F544048347969A16EC6D16507FA2
 
-#include <boost/utility/string_ref.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/operators.hpp>
 #include <wiertlo/pimpl_handle.hpp>
+#include <string>
 
 namespace gdbplz
 {
-	struct gdb_version : boost::totally_ordered<gdb_version>
-	{
-		unsigned major;
-		unsigned minor;
-		unsigned patch;
-		std::string others;
-		
-		bool operator<(const gdb_version& other) const;
-		bool operator==(const gdb_version& other) const;
-		gdb_version(unsigned major, unsigned minor);
-		gdb_version(unsigned major, unsigned minor, unsigned patch);
-		gdb_version(unsigned major, unsigned minor, unsigned patch, std::string others);
-	};
-	
 	class function_id : boost::totally_ordered<function_id>
 	{
 	private:
@@ -29,6 +14,7 @@ namespace gdbplz
 		typedef wiertlo::pimpl_handle<impl, void*, 8> pimpl_handle_type;
 		pimpl_handle_type pi;
 	public:
+		function_id(std::string name);
 		function_id(function_id&&);
 		function_id& operator=(function_id&&);
 		function_id(const function_id&);
@@ -45,12 +31,6 @@ namespace gdbplz
 		// get user-readable string representation of the function
 		std::string to_string() const;
 		friend std::hash<function_id>;
-	};
-	
-	struct source_location
-	{
-		boost::filesystem::path source;
-		unsigned long long line;
 	};
 }
 

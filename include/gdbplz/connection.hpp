@@ -5,10 +5,9 @@
 #include <boost/filesystem.hpp>
 #include <boost/optional.hpp>
 #include <string>
-#include <future>
 #include <stdexcept>
 #include <wiertlo/pimpl_handle.hpp>
-#include "./gdb_io.hpp"
+#include "./gdb_raw.hpp"
 
 namespace gdbplz
 {

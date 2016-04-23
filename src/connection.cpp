@@ -8,9 +8,10 @@
 #include <boost/tokenizer.hpp>
 #include <map>
 #include "../../../NotMine/jucipp/tiny-process-library/process.hpp"
-#include "../include/gdbplz/connection.hpp"
-#include "../include/gdbplz/gdb_io.hpp"
-#include "../include/gdbplz/utility/blocking_queue.hpp"
+#include <gdbplz/connection.hpp>
+#include <gdbplz/gdb_raw.hpp>
+#include <gdbplz/internal/parsing.hpp>
+#include <gdbplz/utility/blocking_queue.hpp>
 
 namespace gdbplz
 {

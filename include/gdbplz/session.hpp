@@ -5,11 +5,26 @@
 #include <boost/utility/string_ref.hpp>
 #include "./connection.hpp"
 #include "./inferior.hpp"
-#include "./gdb_aux.hpp"
+#include "./gdb_version.hpp"
 #include <wiertlo/pimpl_handle.hpp>
+#include <wiertlo/strong_typedef.hpp>
 
 namespace gdbplz
-{	
+{
+	struct remote_params
+	{
+		
+	};
+	
+	struct local_params
+	{
+		boost::filesystem::path debugged_executable;
+		boost::filesystem::path symbol_file = debugged_executable;
+		std::vector<boost::string_ref> arguments = std::vector<boost::string_ref>();
+	};
+	
+	WIERTLO_STRONG_TYPEDEF(process_id, int);	
+	
 	class session
 	{
 	private:
@@ -25,7 +40,7 @@ namespace gdbplz
 		
 		session(gdbplz::connection conn);
 		
-		inferior launch_local_program(local_params params);
+		std::shared_ptr<inferior> launch_local_program(local_params params);
 		
 		gdb_version version() const;
 	};

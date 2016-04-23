@@ -12,8 +12,8 @@ find_package(Threads)
 add_subdirectory("${CMAKE_SOURCE_DIR}/rapidcheck")
 
 set(CMAKE_CXX_EXTENSIONS OFF)
-file(GLOB_RECURSE INCLUDES include/*.hpp)
-file(GLOB SOURCES src/*.cpp)
+file(GLOB_RECURSE INCLUDES "${CMAKE_SOURCE_DIR}/include/*.hpp")
+file(GLOB SOURCES "${CMAKE_SOURCE_DIR}/src/*.cpp")
 
 set(SOURCE_FILES
 	${INCLUDES}
@@ -23,6 +23,7 @@ set(SOURCE_FILES
 	../../NotMine/jucipp/tiny-process-library/process_unix.cpp)
 
 include_directories("${CMAKE_SOURCE_DIR}/include")
+include_directories("${CMAKE_SOURCE_DIR}/src/include")
 include_directories("${CMAKE_SOURCE_DIR}/wiertlo/include")
 include_directories(../../NotMine/jucipp/tiny-process-library)
 
