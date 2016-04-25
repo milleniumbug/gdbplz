@@ -49,6 +49,15 @@ namespace wiertlo
 			this->d_condition.notify_one();
 		}
 		
+		void push(T&& value)
+		{
+			{
+				WriteLock lock(this->d_mutex);
+				d_queue.push_front(std::move(value));
+			}
+			this->d_condition.notify_one();
+		}
+		
 		// pop the value from the beginning of the queue
 		// blocks until the queue is not empty
 		T pop()
