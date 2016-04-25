@@ -179,47 +179,6 @@ R"!#%^&*****(=thread-group-added,id="i1"
 *stopped,reason="breakpoint-hit",disp="keep",bkptno="1",frame={addr="0x00007ffff74b1b3d",func="__cxxabiv1::__cxa_throw",args=[{name="obj",value="0x945220"},{name="tinfo",value="0x6b99d0 <typeinfo for gdbplz::empty_container>"},{name="dest",value="0x61a7e8 <gdbplz::empty_container::~empty_container()>"}],file="../../../../libstdc++-v3/libsupc++/eh_throw.cc",fullname="/usr/src/debug/gcc-5.3.1-20151207/libstdc++-v3/libsupc++/eh_throw.cc",line="63"},thread-id="1",stopped-threads="all",core="1"
 (gdb)
 )!#%^&*****";
-	struct logger_visitor : public boost::static_visitor<void>
-	{
-		std::ostream& os;
-		
-		void operator()(const gdbplz::end_of_output_tag&) const
-		{
-			os << "GET USER INPUT\n";
-		}
-		
-		void operator()(const gdbplz::result_record& s) const
-		{
-			os << "USERTOKEN: " << s.token << " RESULT-CLASS: " << static_cast<int>(s.state) << " RESULTS: ";
-			for(auto& x : s.results)
-			{
-				os << x.first << "=>" << gdbplz::to_string(x.second) << " ";
-			}
-			os << "\n";
-		}
-		
-		void operator()(const gdbplz::async_record& s) const
-		{
-			auto vis = wiertlo::make_lambda_visitor<void>([&](auto&& async_output){
-				auto s = async_output.get();
-				os << "USERTOKEN: " << s.token << " ASYNC-CLASS: " << static_cast<int>(s.state) << " RESULTS: ";
-				for(auto& x : s.results)
-				{
-					os << x.first << "=>" << gdbplz::to_string(x.second) << " ";
-				}
-				os << "\n";
-			});
-			boost::apply_visitor(vis, s);
-		}
-		
-		void operator()(const gdbplz::stream_record& s) const
-		{
-			
-		}
-		
-		logger_visitor(std::ostream& os) : os(os) {}
-	} vis(std::cout);
-	
 	boost::char_separator<char> sep("\r\n");
 	boost::tokenizer<
 		decltype(sep),
@@ -228,6 +187,15 @@ R"!#%^&*****(=thread-group-added,id="i1"
 	for(auto line : tokenizer)
 	{
 		auto out = gdbplz::parse(line);
-		boost::apply_visitor(vis, out);
+		//boost::apply_visitor(vis, out);
 	}
+}
+
+TEST_CASE("gdb mi buggy async records", "[parse]")
+{
+	std::string input = R"**(*running,thread-id="all"
+	)**";
+	auto out = gdbplz::parse(input);
+	gdbplz::logger_visitor vis(std::cout);
+	boost::apply_visitor(vis, out);
 }

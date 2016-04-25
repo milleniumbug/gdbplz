@@ -1,5 +1,5 @@
 #include <boost/filesystem.hpp>
-#include "../include/gdbplz/connection.hpp"
+#include <gdbplz/connection.hpp>
 #include "../Catch/include/catch.hpp"
 
 TEST_CASE("guessing gdb path", "[connection]")

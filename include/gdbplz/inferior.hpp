@@ -10,7 +10,7 @@ namespace gdbplz
 {
 	class function_id;
 	class thread;
-	class source_location;
+	struct source_location;
 	
 	class inferior
 	{

@@ -518,4 +518,48 @@ namespace gdbplz
 		boost::apply_visitor(vis, val);
 		return ss.str();
 	}
+	
+	struct logger_visitor_async_output : boost::static_visitor<void>
+	{
+		std::ostream& os;
+		logger_visitor_async_output(std::ostream& os) : os(os) {}
+		
+		template<typename T>
+		void operator()(T&& async_output) const
+		{
+			auto s = async_output.get();
+			os << "USERTOKEN: " << s.token << " ASYNC-CLASS: " << static_cast<int>(s.state) << " RESULTS: ";
+			for(auto& x : s.results)
+			{
+				os << x.first << "=>" << gdbplz::to_string(x.second) << " ";
+			}
+			os << "\n";
+		}
+	};
+	
+	void logger_visitor::operator()(const gdbplz::end_of_output_tag&) const
+	{
+		os << "GET USER INPUT\n";
+	}
+	
+	void logger_visitor::operator()(const gdbplz::result_record& s) const
+	{
+		os << "USERTOKEN: " << s.token << " RESULT-CLASS: " << static_cast<int>(s.state) << " RESULTS: ";
+		for(auto& x : s.results)
+		{
+			os << x.first << "=>" << gdbplz::to_string(x.second) << " ";
+		}
+		os << "\n";
+	}
+	
+	void logger_visitor::operator()(const gdbplz::async_record& s) const
+	{
+		logger_visitor_async_output vis(std::cout);
+		boost::apply_visitor(vis, s);
+	}
+	
+	void logger_visitor::operator()(const gdbplz::stream_record&) const
+	{
+		
+	}
 }

@@ -2,7 +2,9 @@
 #define GDBPLZ_SESSION_HPP_4FC8D6EA7D054C9CA02EEDFE868107A1
 
 #include <functional>
+#include <future>
 #include <boost/utility/string_ref.hpp>
+#include <boost/signals2.hpp>
 #include "./connection.hpp"
 #include "./inferior.hpp"
 #include "./gdb_version.hpp"
@@ -19,8 +21,9 @@ namespace gdbplz
 	struct local_params
 	{
 		boost::filesystem::path debugged_executable;
-		boost::filesystem::path symbol_file = debugged_executable;
-		std::vector<boost::string_ref> arguments = std::vector<boost::string_ref>();
+		boost::optional<boost::filesystem::path> working_directory;
+		boost::optional<boost::filesystem::path> symbol_file;
+		boost::optional<std::vector<boost::string_ref>> arguments;
 	};
 	
 	WIERTLO_STRONG_TYPEDEF(process_id, int);	
@@ -38,10 +41,15 @@ namespace gdbplz
 		session(const session&) = delete;
 		session& operator=(const session&) = delete;
 		
-		session(gdbplz::connection conn);
+		session(std::unique_ptr<gdbplz::abstract_connection> conn);
 		
-		std::shared_ptr<inferior> launch_local_program(local_params params);
+		boost::signals2::signal<void(std::string)>& signal_program_output();
+		boost::signals2::signal<void(std::string)>& signal_cli_responses();
+		boost::signals2::signal<void(std::string)>& signal_gdb_logs();
 		
+		std::shared_ptr<inferior> launch(local_params params);
+		
+		std::future<result_record> send(mi_command mi);
 		gdb_version version() const;
 	};
 }

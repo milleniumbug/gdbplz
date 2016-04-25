@@ -20,6 +20,17 @@ namespace gdbplz
 	std::string c_string_literal_from_string(boost::string_ref literal);
 	std::string string_from_c_string_literal(boost::string_ref literal);
 	output parse(boost::string_ref gdb_output);
+	
+	struct logger_visitor : public boost::static_visitor<void>
+	{
+		std::ostream& os;
+		void operator()(const gdbplz::end_of_output_tag&) const;
+		void operator()(const gdbplz::result_record& s) const;
+		void operator()(const gdbplz::async_record& s) const;
+		void operator()(const gdbplz::stream_record&) const;
+		
+		logger_visitor(std::ostream& os) : os(os) {}
+	};
 }
 
 #endif

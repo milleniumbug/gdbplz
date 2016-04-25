@@ -31,7 +31,17 @@ namespace gdbplz
 	
 	boost::optional<boost::filesystem::path> guess_gdb_path();
 	
-	class connection
+	class abstract_connection
+	{
+	public:
+		virtual ~abstract_connection() {}
+		virtual void send(mi_command comm) = 0;
+		virtual boost::optional<boost::variant<input, output>> wait() = 0;
+		virtual boost::optional<boost::variant<input, output>> poll() = 0;
+		virtual void restart() = 0;
+	};
+	
+	class connection : public abstract_connection
 	{
 	private:
 		struct impl;

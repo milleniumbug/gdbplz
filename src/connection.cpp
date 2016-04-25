@@ -3,11 +3,12 @@
 #include <thread>
 #include <chrono>
 #include <future>
+#include <fstream>
 #include <boost/lexical_cast.hpp>
 #include <boost/variant.hpp>
 #include <boost/tokenizer.hpp>
 #include <map>
-#include "../../../NotMine/jucipp/tiny-process-library/process.hpp"
+#include "process.hpp"
 #include <gdbplz/connection.hpp>
 #include <gdbplz/gdb_raw.hpp>
 #include <gdbplz/internal/parsing.hpp>
@@ -23,11 +24,11 @@ namespace gdbplz
 				output>> input_queue;
 		boost::filesystem::path gdb_executable;
 		std::unique_ptr<Process> gdb_process;
-		std::map<user_token, std::promise<result_record>> promises;
-		std::thread event_thread;
+		std::ofstream log;
 		
 		void send(boost::string_ref c)
 		{
+			log << "< " << c << "\n";
 			gdb_process->write(c.data(), c.size());
 		}
 		
@@ -45,8 +46,11 @@ namespace gdbplz
 	
 	connection::~connection()
 	{
-		auto& i = impl::get(pi);
-		i.exit();
+		if(impl::get_handle(pi))
+		{
+			auto& i = impl::get(pi);
+			i.exit();
+		}
 	}
 	
 	connection::connection(connection&&) = default;
@@ -57,6 +61,7 @@ namespace gdbplz
 	{
 		auto& i = impl::get(pi);
 		i.gdb_executable = gdb_executable;
+		i.log.open("out");
 		restart();
 	}
 	
@@ -69,8 +74,7 @@ namespace gdbplz
 		i.gdb_process.reset(new Process(
 			std::string("'") + i.gdb_executable.string() + "' " + extra_params + " --interpreter=mi2  -- ",
 			"",
-			[this](const char* buffer, std::size_t size) {
-				auto& i = impl::get(pi);
+			[&i](const char* buffer, std::size_t size) {
 				boost::string_ref output(buffer, size);
 				boost::char_separator<char> sep("\r\n");
 				boost::tokenizer<
@@ -79,10 +83,22 @@ namespace gdbplz
 					std::string> tokenizer(output, sep);
 				for(auto line : tokenizer)
 				{
+					i.log << "> " << line << "\n";
 					i.input_queue.push(gdbplz::parse(line));
 				}
-			}
+			}, // stdin output function
+			[](const char*, std::size_t) {
+				// just ignore it
+			}, // stderr output function
+			true // open stdin
 		));
+		/*int exitcode;
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		if(i.gdb_process->try_get_exit_status(exitcode))
+		{
+			i.gdb_process->kill();
+			throw gdb_not_found(i.gdb_executable);
+		}*/
 		// TODO: throw if you can't launch gdb
 	}
 	
@@ -103,6 +119,13 @@ namespace gdbplz
 	{
 		auto& i = impl::get(pi);
 		return i.input_queue.try_pop();
+	}
+	
+	gdb_not_found::gdb_not_found(boost::filesystem::path requested_gdb_instance) :
+		connection_error("Invalid or missing gdb " + requested_gdb_instance.string()),
+		requested_gdb_instance(requested_gdb_instance)
+	{
+		
 	}
 	
 	boost::optional<boost::filesystem::path> guess_gdb_path()
