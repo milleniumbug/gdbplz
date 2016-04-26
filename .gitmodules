@@ -7,3 +7,6 @@
 [submodule "wiertlo"]
 	path = wiertlo
 	url = https://github.com/milleniumbug/wiertlo
+[submodule "yet_another_process_library"]
+	path = yet_another_process_library
+	url = https://github.com/milleniumbug/yet_another_process_library

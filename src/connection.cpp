@@ -8,14 +8,16 @@
 #include <boost/variant.hpp>
 #include <boost/tokenizer.hpp>
 #include <map>
-#include "process.hpp"
 #include <gdbplz/connection.hpp>
 #include <gdbplz/gdb_raw.hpp>
 #include <gdbplz/internal/parsing.hpp>
 #include <gdbplz/utility/blocking_queue.hpp>
+#include <yet_another_process_library/process.hpp>
 
 namespace gdbplz
 {
+	using yet_another_process_library::process;
+	
 	struct connection::impl : wiertlo::pimpl_implementation_mixin<connection::pimpl_handle_type, connection::impl>
 	{
 		wiertlo::blocking_queue<
@@ -23,13 +25,13 @@ namespace gdbplz
 				input,
 				output>> input_queue;
 		boost::filesystem::path gdb_executable;
-		std::unique_ptr<Process> gdb_process;
+		std::unique_ptr<process> gdb_process;
 		std::ofstream log;
 		
 		void send(boost::string_ref c)
 		{
 			log << "< " << c << "\n";
-			gdb_process->write(c.data(), c.size());
+			gdb_process->write(c);
 		}
 		
 		void exit()
@@ -69,13 +71,12 @@ namespace gdbplz
 	{
 		auto& i = impl::get(pi);
 		i.exit();
-		const std::string extra_params = "";
 		i.input_queue.clear();
-		i.gdb_process.reset(new Process(
-			std::string("'") + i.gdb_executable.string() + "' " + extra_params + " --interpreter=mi2  -- ",
-			"",
-			[&i](const char* buffer, std::size_t size) {
-				boost::string_ref output(buffer, size);
+		std::vector<std::string> args = { "--interpreter=mi2", "--"};
+		i.gdb_process.reset(new process(
+			i.gdb_executable,
+			args,
+			[&i](boost::string_ref output) {
 				boost::char_separator<char> sep("\r\n");
 				boost::tokenizer<
 					decltype(sep),
@@ -87,19 +88,16 @@ namespace gdbplz
 					i.input_queue.push(gdbplz::parse(line));
 				}
 			}, // stdin output function
-			[](const char*, std::size_t) {
+			[](boost::string_ref) {
 				// just ignore it
-			}, // stderr output function
-			true // open stdin
+			} // stderr output function
 		));
-		/*int exitcode;
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
-		if(i.gdb_process->try_get_exit_status(exitcode))
+		if(i.gdb_process->get_exit_status())
 		{
 			i.gdb_process->kill();
 			throw gdb_not_found(i.gdb_executable);
-		}*/
-		// TODO: throw if you can't launch gdb
+		}
 	}
 	
 	void connection::send(mi_command comm)
@@ -131,13 +129,16 @@ namespace gdbplz
 	boost::optional<boost::filesystem::path> guess_gdb_path()
 	{
 		std::string out;
-		Process which_gdb(
-			"which gdb",
-			"",
-			[&out](const char* buffer, std::size_t size) {
-				out.append(buffer, size);
-			}
+		process which_gdb(
+			"which",
+			{"gdb"},
+			[&out](boost::string_ref output) {
+				out.append(output.begin(), output.end());
+			},
+			nullptr,
+			process::stdin_closed | process::search_path_env
 		);
+		which_gdb.wait();
 		if(which_gdb.get_exit_status() == 0)
 		{
 			auto remove_trailing_newline = [&](){ out.pop_back(); };
