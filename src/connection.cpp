@@ -69,14 +69,15 @@ namespace gdbplz
 	
 	void connection::restart()
 	{
+		namespace yapl = yet_another_process_library;
 		auto& i = impl::get(pi);
 		i.exit();
 		i.input_queue.clear();
 		std::vector<std::string> args = { "--interpreter=mi2", "--"};
 		i.gdb_process.reset(new process(
 			i.gdb_executable,
-			args,
-			[&i](boost::string_ref output) {
+			yapl::make_ascii_args(args),
+			process::stream_consumer([&i](boost::string_ref output) {
 				boost::char_separator<char> sep("\r\n");
 				boost::tokenizer<
 					decltype(sep),
@@ -87,10 +88,10 @@ namespace gdbplz
 					i.log << "> " << line << "\n";
 					i.input_queue.push(gdbplz::parse(line));
 				}
-			}, // stdin output function
-			[](boost::string_ref) {
+			}), // stdin output function
+			process::stream_consumer([](boost::string_ref) {
 				// just ignore it
-			} // stderr output function
+			}) // stderr output function
 		));
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		if(i.gdb_process->get_exit_status())
@@ -128,15 +129,16 @@ namespace gdbplz
 	
 	boost::optional<boost::filesystem::path> guess_gdb_path()
 	{
+		namespace yapl = yet_another_process_library;
 		std::string out;
 		process which_gdb(
 			"which",
-			{"gdb"},
-			[&out](boost::string_ref output) {
+			yapl::make_ascii_args({"gdb"}),
+			std::function<void(boost::string_ref)>([&out](boost::string_ref output) {
 				out.append(output.begin(), output.end());
-			},
-			nullptr,
-			process::stdin_closed | process::search_path_env
+			}),
+			yapl::stderr_closed,
+			yapl::stdin_closed | yapl::search_path_env
 		);
 		which_gdb.wait();
 		if(which_gdb.get_exit_status() == 0)
