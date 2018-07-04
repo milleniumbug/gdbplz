@@ -3,7 +3,7 @@
 	url = https://github.com/philsquared/Catch.git
 [submodule "rapidcheck"]
 	path = rapidcheck
-	url = https://github.com/emil-e/rapidcheck
+	url = https://github.com/milleniumbug/rapidcheck
 [submodule "wiertlo"]
 	path = wiertlo
 	url = https://github.com/milleniumbug/wiertlo
